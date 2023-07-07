@@ -1,0 +1,73 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:sorcevapla/model/post_model.dart';
+import 'package:sorcevapla/provider/provider.dart';
+import 'package:sorcevapla/screens/Question_Display/Question_Display.dart';
+import 'package:sorcevapla/screens/welcome/splashScreen.dart';
+
+class TeacherHome extends StatefulWidget {
+  const TeacherHome({super.key});
+
+  @override
+  State<TeacherHome> createState() => _TeacherHomeState();
+}
+
+class _TeacherHomeState extends State<TeacherHome> {
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    studentUserGet();
+  }
+
+  studentUserGet() async{
+    ProjectProvider projectProvider = Provider.of(context,listen: false);
+    await projectProvider.userProviderDetails();
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Soru Cevap Uygulaması - Öğretmen'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              _auth.signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => SplashScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: StreamBuilder(
+        stream: _firestore.collection("userQuestion").snapshots(),
+        builder: (context, snapshot) {
+          if(snapshot.hasData){
+            List<PostModel> denemeQuestion = snapshot.data!.docs.map((e) => PostModel.fromDocument(e)).toList();
+          return ListView.builder(
+            itemCount: denemeQuestion.length,
+            itemBuilder: (context, index) {
+              return QuestionDisplayScreen(question: denemeQuestion[index]);
+            },
+          );
+          }
+          return Center(child: CircularProgressIndicator(),);
+        },
+      ),
+    );
+  }
+}
